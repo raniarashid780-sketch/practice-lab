@@ -26,7 +26,7 @@ The current focus is on building practical skills in:
 | `NumPy/` | Arrays, indexing, broadcasting, reshaping, linear algebra, random operations | Completed |
 | `pandas/` | Series/dataframes, CSV I/O, filtering, missing data, groupby, merge, pivot, datetime manipulation | Completed |
 | `matplotlib/` | Plotting basics, chart types, styling, subplots | Completed |
-| `eda-practice/` | Data quality audits, missing-value handling, outlier detection, univariate/bivariate analysis, question framing, feature-signal review | In progress |
+| `eda-practice/` | Data quality audits, missing-value handling, outlier detection, univariate/bivariate analysis, question framing, feature-signal review | Completed |
 | `sklearn-practice/` | Train/test splitting, stratification, baseline models, and classification metrics | In progress |
 | `sql-practice/` | PostgreSQL exercises and SQL learning track | Completed |
 | `sqlalchemy-practice/` | ORM basics, models, sessions, relationships, querying, Alembic setup | Completed |
@@ -77,7 +77,7 @@ python sklearn-practice/day01_split_baseline.py
 ```
 
 For EDA practice:
-- Start with the raw data file in the project root: `Messy_Employee_dataset.csv`
+- Start with the raw data file : `dirty_cafe_sales.csv`
 - Explore the scripts in `eda-practice/` in order
 - Example:
 
