@@ -60,13 +60,13 @@ print("LR std:", lr_scores.std())
 
 # Prediction: without shuffling, the class-sorted rows should produce highly
 # uneven folds. Shuffling should mix the classes, but does not guarantee balance.
-kf = KFold(n_splits=3)
-for tr_idx, va_idx in kf.split(X):
-    print(np.bincount(y.values[va_idx], minlength=3))
+no_shuffle_kf = KFold(n_splits=3)
+for fold, (tr_idx, va_idx) in enumerate(no_shuffle_kf.split(X), start=1):
+    print("No shuffle fold counts:", fold, np.bincount(y.values[va_idx], minlength=3))
 
-kf = KFold(n_splits=3, shuffle=True, random_state=1)
-for tr_idx, va_idx in kf.split(X):
-    print(np.bincount(y.values[va_idx], minlength=3))
+shuffled_kf = KFold(n_splits=3, shuffle=True, random_state=1)
+for fold, (tr_idx, va_idx) in enumerate(shuffled_kf.split(X), start=1):
+    print("Shuffled fold counts:", fold, np.bincount(y.values[va_idx], minlength=3))
 
 # Wine rows are stored sorted by class. Without shuffling, the counts are
 # [59, 1, 0], [0, 59, 0], [0, 11, 48]; shuffled counts are
@@ -82,6 +82,8 @@ shuffled_scores = cross_val_score(
 )
 print("Unshuffled KFold LR:", unshuffled_scores, "mean:", unshuffled_scores.mean())
 print("Shuffled KFold LR:", shuffled_scores, "mean:", shuffled_scores.mean())
+# The unshuffled mean of 0.316 is below the 0.398 baseline, while shuffling
+# gives 0.950; the low score is a sign that this evaluation setup is broken.
 # In fold 1, training has no class-0 wines ([0, 70, 48]) while validation has
 # 59 class-0 wines. It gets only 1 of 60 right (about 0.017 accuracy).
 
@@ -91,7 +93,7 @@ print("Shuffled KFold LR:", shuffled_scores, "mean:", shuffled_scores.mean())
 
 final_model = LogisticRegression(max_iter=5000)
 final_model.fit(X_train, y_train)
-print(final_model.score(X_train, y_train))
+print("Training accuracy:", final_model.score(X_train, y_train))
 test_score = final_model.score(X_test, y_test)
 print("Test accuracy:", test_score)
 # Test accuracy is 0.9333, inside the CV range 0.9474 +/- 0.0329
@@ -110,12 +112,13 @@ print("Test accuracy:", test_score)
 # - Comment: how close was your prediction? Why can't it be exact?
 
 # Prediction by class (44 / 53 / 36 split into 5 folds):
+# 44 / 5 = 8.8; 53 / 5 = 10.6; 36 / 5 = 7.2.
 # class 0: [9, 9, 9, 9, 8]; class 1: [11, 11, 11, 10, 10];
 # class 2: [8, 7, 7, 7, 7]. Each class's remainder means its counts cannot
 # be identical in every fold.
-cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=7)
-for tr_idx, va_idx in cv.split(X_train, y_train):
+cv5 = StratifiedKFold(n_splits=5, shuffle=True, random_state=7)
+for tr_idx, va_idx in cv5.split(X_train, y_train):
     print("Task 8 validation counts:", np.bincount(y_train.values[va_idx], minlength=3))
-# The observed counts should be close to the hand prediction; StratifiedKFold
-# distributes each class as evenly as possible, but indivisible counts require
-# some folds to receive one more row of a class than others.
+# The observed per-class counts match the predicted lists exactly; the extra
+# row's fold could not be predicted because the remainders do not identify its
+# destination.
