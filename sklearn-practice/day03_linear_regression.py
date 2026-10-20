@@ -6,8 +6,8 @@ from sklearn.model_selection import train_test_split, cross_val_score, KFold
 from sklearn.dummy import DummyRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, mean_squared_error, root_mean_squared_error, r2_score
-A = np.array([[1], [2], [3], [4]])
-b = np.array([[1], [3], [2], [4]])
+X_toy = np.array([[1], [2], [3], [4]])
+y_toy = np.array([1, 3, 2, 4])
 
 # Task 0 (by hand, comments only):
 # - Toy data: x = [1, 2, 3, 4], y = [1, 3, 2, 4]
@@ -33,16 +33,16 @@ b = np.array([[1], [3], [2], [4]])
 # - Print slope (coef_), intercept_, predictions, MAE, R^2, and model.predict([[5]])
 # - Comment: do all of them match your hand answers? If not, find your mistake
 
-toy_model = LinearRegression().fit(A, b)
-pred = toy_model.predict(A)
-print(f"slope: {toy_model.coef_[0]}")
-print(f"intercept: {toy_model.intercept_}")
-print(f"predictions: {pred}")
-print(f"MAE: {mean_absolute_error(b, pred)}")
-print(f"R^2: {toy_model.score(A, b)}")
+toy_model = LinearRegression().fit(X_toy, y_toy)
+toy_pred = toy_model.predict(X_toy)
+print(f"slope: {toy_model.coef_[0]:.1f}")
+print(f"intercept: {toy_model.intercept_:.1f}")
+print(f"predictions: {toy_pred}")
+print(f"MAE: {mean_absolute_error(y_toy, toy_pred):.2f}")
+print(f"R^2: {toy_model.score(X_toy, y_toy):.2f}")
 print(f"Prediction for x=5: {toy_model.predict([[5]])}")
 
-# Yes all match. The slope and intercept are the same, the predictions are the same, the MAE is the same, and the R^2 is the same. The prediction for x=5 is also the same.
+# Yes all match. The slope and intercept are the same slope = 0.8, intercept = 0.5, the predictions are the same, the MAE is the same MAE = 0.60, and the R^2 is the same R^2 = 0.64. The prediction for x=5 is also the same 4.5 at x =5.
 
 # Task 2:
 # - Load diabetes. Split with test_size=0.2, random_state=3 (NO stratify)
@@ -52,7 +52,7 @@ print(f"Prediction for x=5: {toy_model.predict([[5]])}")
 X, y = load_diabetes(as_frame=True, return_X_y=True)
 print(X.shape, y.shape)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=3)
-print(len(X_train), len(X_test))  # 353  89
+print(len(X_train), len(X_test))  # 442 × 0.2 = 88.4, rounded up to 89 test rows so 353 train rows.
 
 # Task 3:
 # - DummyRegressor(strategy="mean") fit on the TRAIN data
@@ -61,13 +61,13 @@ print(len(X_train), len(X_test))  # 353  89
 # - Comment: what single number does it predict for every row, and where does it come from?
 
 base = DummyRegressor(strategy="mean").fit(X_train, y_train)
-# Prediction: test R^2 should be near zero and could be negative because this model ignores the features and predicts the training-target mean. Its prediction is the mean of y_train.
-pred = base.predict(X_test)
-baseline_mae = mean_absolute_error(y_test, pred)
-print(f"Baseline MAE: {baseline_mae}")
-print(f"Baseline RMSE: {root_mean_squared_error(y_test, pred)}")
-print(f"Baseline R^2: {base.score(X_test, y_test)}")
-print(f"Baseline prediction (all rows, rounded): {set(np.round(pred, 2))}")
+# Prediction: test R^2 should be near zero and could be negative because this model ignores the features and predicts the training-target mean. Its prediction is the mean of y_train which is 153.56.
+base_pred = base.predict(X_test)
+baseline_mae = mean_absolute_error(y_test, base_pred)
+print(f"Baseline MAE: {baseline_mae:.2f}")
+print(f"Baseline RMSE: {root_mean_squared_error(y_test, base_pred):.2f}")
+print(f"Baseline R^2: {base.score(X_test, y_test):.2f}")
+print(f"Baseline prediction (all rows, rounded): {set(np.round(base_pred, 2))}")
 
 # Task 4:
 # - LinearRegression on ALL 10 features: fit on train, print MAE, RMSE, R^2 on test (once)
@@ -76,19 +76,22 @@ print(f"Baseline prediction (all rows, rounded): {set(np.round(pred, 2))}")
 # - Comment: why would it be a mistake to say "that feature is the most important one"?
 
 model = LinearRegression().fit(X_train, y_train)
-pred = model.predict(X_test)
-model_mae = mean_absolute_error(y_test, pred)
-full_model_test_r2 = r2_score(y_test, pred)
-print(f"MAE: {model_mae}")
-print(f"RMSE: {root_mean_squared_error(y_test, pred)}")
-print(f"Test R^2: {full_model_test_r2}")
-print(f"Train R^2: {model.score(X_train, y_train)}")
+lr_pred = model.predict(X_test)
+model_mae = mean_absolute_error(y_test, lr_pred)
+full_model_test_r2 = r2_score(y_test, lr_pred)
+print(f"MAE: {model_mae:.2f}")
+print(f"RMSE: {root_mean_squared_error(y_test, lr_pred):.2f}")
+print(f"Test R^2: {full_model_test_r2:.2f}")
+print(f"Train R^2: {model.score(X_train, y_train):.2f}")
 print(f"MAE reduction from baseline: {(baseline_mae - model_mae) / baseline_mae * 100:.1f}%")
 print(f"Model coefficients shape: {model.coef_.shape}")
 largest_coefficient_index = np.abs(model.coef_).argmax()
 print(f"Largest absolute coefficient: {X.columns[largest_coefficient_index]} ({model.coef_[largest_coefficient_index]:.3f})")
-# Coefficient magnitude alone does not establish feature importance: correlated features can share or distort their apparent effects, and coefficient size depends on feature scale.
-
+# Train R^2 (0.5366) is 0.1204 higher than test R^2 (0.4162), suggesting some overfitting and weaker performance on unseen data.
+# There are 10 coefficients because the model learns one slope for each of the 10 input features.
+# The largest absolute coefficient belongs to s1(-938.24), but that alone does not make it the most important feature.
+# In this dataset, s1 and s2 are strongly correlated (r = 0.90), so their coefficients can share explanatory signal and be difficult to interpret separately.
+# The features are on comparable normalized scales, so scale differences are not the main caveat here.
 
 # Task 5:
 # - Fit a second LinearRegression using ONLY the "bmi" column (X_train[["bmi"]], double brackets)
@@ -97,10 +100,10 @@ print(f"Largest absolute coefficient: {X.columns[largest_coefficient_index]} ({m
 
 second_model = LinearRegression().fit(X_train[["bmi"]], y_train)
 # Prediction: I expect the one-feature model to have lower test R^2 because it cannot use the other predictors; test R^2 is not guaranteed to decrease when features are removed.
-pred = second_model.predict(X_test[["bmi"]])
-single_feature_test_r2 = r2_score(y_test, pred)
-print(f"Second model R^2: {single_feature_test_r2}")
-print(f"Second model MAE: {mean_absolute_error(y_test, pred)}")
+bmi_pred = second_model.predict(X_test[["bmi"]])
+single_feature_test_r2 = r2_score(y_test, bmi_pred)
+print(f"Second model R^2: {single_feature_test_r2:.2f}")
+print(f"Second model MAE: {mean_absolute_error(y_test, bmi_pred):.2f}")
 print(f"Test R^2 change after dropping 9 features: {single_feature_test_r2 - full_model_test_r2:.3f}")
 
 # Task 6:
@@ -125,7 +128,7 @@ print(f"LR MAE mean: {lr_mae_mean:.3f}, std: {lr_scores.std():.3f}")
 print(f"Baseline MAE mean: {baseline_mae_mean:.3f}, std: {baseline_mae_std:.3f}")
 print(f"Mean MAE improvement: {mae_improvement:.3f}")
 print(f"Improvement exceeds baseline fold-to-fold std: {mae_improvement > baseline_mae_std}")
-# This compares the mean improvement with the baseline's fold-to-fold standard deviation; it is descriptive, not a statistical significance test.
+# The model's mean MAE is 22.33 points lower than the baseline's. This exceeds the model and baseline fold-to-fold standard deviations of 3.75 and 3.29 points, respectively. This is descriptive, not a statistical significance test.
 
 # Task 7 (the traps, two small ones):
 # - Try train_test_split(X, y, test_size=0.2, random_state=3, stratify=y) inside try/except and print the error type
@@ -141,8 +144,8 @@ except ValueError as error:
     print(f"Error type: {type(error).__name__}: {error}")
 
 try:
-    rmse = mean_squared_error(y_test, pred, squared=False)
-    print(f"RMSE: {rmse}")
+    rmse = mean_squared_error(y_test, bmi_pred)
+    print(f"RMSE: {rmse:.2f}")
 except TypeError as error:
     print(f"Error type: {type(error).__name__}: {error}")
 # Prediction: stratification should fail because this target is continuous, while stratification requires discrete class labels. The modern RMSE function is root_mean_squared_error(y_true, y_pred), used above.
